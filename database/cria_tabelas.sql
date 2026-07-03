@@ -2,7 +2,8 @@ CREATE TABLE Usuario (
     ID_Usuario INT PRIMARY KEY,
     Nome VARCHAR(150) NOT NULL,
     Senha VARCHAR(255) NOT NULL, 
-    Data_Nascimento DATE NOT NULL
+    Data_Nascimento DATE NOT NULL,
+    Email VARCHAR(255) NOT NULL UNIQUE
 );
 
 CREATE TABLE Evento (
