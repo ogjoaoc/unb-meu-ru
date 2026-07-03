@@ -1,12 +1,26 @@
 import streamlit as st
 
 def sidebar():
+    st.markdown("""
+    <style>
+    [data-testid="stSidebar"] {
+        min-width: 250px;
+        max-width: 250px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     with st.sidebar:
-        st.space(355)
+        st.space(50)
+        
+        if st.button("Cardápio", width=200, icon=":material/restaurant_menu:"):
+            st.session_state['pagina'] = "home"
+            st.rerun()
 
-        col1, col2 = st.columns([1,3])
+        if st.button("Eventos", width=200, icon=":material/event:"):
+            st.session_state['pagina'] = "eventos"
+            st.rerun()
 
-        with col1:
-            st.image("https://raw.githubusercontent.com/antonio-reis/unb-meu-ru/main/assets/logo.png", width=50)
-        with col2:
-            st.markdown("## Sistema de Gestão")
+        if st.button("Login", width=200, icon=":material/login:"):
+            st.session_state['pagina'] = "login"
+            st.rerun()

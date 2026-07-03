@@ -1,18 +1,14 @@
+from paginas import cardapio, eventos, login
 import streamlit as st
+import sessoes as ses
 
-pages = {
-    "home": st.Page(
-        "pages/cardapio.py",
-        title= "Cardápio",
-        icon= ":material/restaurant_menu:",
-        default=True
-    ),
-    "eventos": st.Page(
-        "pages/eventos.py",
-        title= "Eventos",
-        icon= ":material/event:"
-    )
-}
+ses.inicia_sessao()
 
-pg = st.navigation(list(pages.values()))
-pg.run()
+if st.session_state['pagina'] == "home":
+    cardapio.home()
+
+if st.session_state['pagina'] == "eventos":
+    eventos.render_eventos()
+
+if st.session_state['pagina'] == "login":
+    login.render_login()
