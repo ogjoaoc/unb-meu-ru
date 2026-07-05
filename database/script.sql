@@ -144,3 +144,70 @@ CREATE TABLE Feedback (
     CONSTRAINT unq_feedback
     UNIQUE (Matricula, ID_Cardapio)
 );
+
+INSERT INTO Usuario (ID_Usuario, Nome, Senha, Data_Nascimento, Email)
+VALUES (3001, 'Fernanda Lima', 'unb1', '1990-05-15', 'fernanda@unb.br')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO Funcionario (ID_Funcionario, Salario, ID_Usuario)
+VALUES (2001, 8500.00, 3001)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO Nutricionista (ID_Funcionario)
+VALUES (2001)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO Usuario (ID_Usuario, Nome, Senha, Data_Nascimento, Email)
+VALUES (3002, 'Marcos Pereira', 'unb1', '1987-11-03', 'marcos@unb.br')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO Funcionario (ID_Funcionario, Salario, ID_Usuario)
+VALUES (2002, 9200.00, 3002)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO Gerente (ID_Funcionario)
+VALUES (2002)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO Usuario (ID_Usuario, Nome, Senha, Data_Nascimento, Email)
+VALUES (3003, 'Joao Silva', 'unb1', '2003-04-20', 'joao@unb.br')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO Estudante (Matricula, Saldo_RU, Curso, ID_Usuario)
+VALUES (24100001, 0.00, 'Ciencia da Computacao', 3003)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO ItemCardapio (ID_ItemCardapio, Categoria, Nome, ID_Nutricionista) VALUES
+(10001, 'Bebida', 'Suco de laranja', 2001),
+(10002, 'Bebida', 'Suco de acerola', 2001),
+(10003, 'Bebida', 'Café preto', 2001),
+(10004, 'Bebida', 'Chá de ervas', 2001),
+(10005, 'Panificação', 'Pão francês', 2001),
+(10006, 'Panificação', 'Pão integral', 2001),
+(10007, 'Panificação', 'Tapioca simples', 2001),
+(10008, 'Complemento', 'Manteiga', 2001),
+(10009, 'Complemento', 'Queijo coalho', 2001),
+(10010, 'Complemento', 'Ovo mexido', 2001),
+(10011, 'Fruta', 'Banana', 2001),
+(10012, 'Fruta', 'Maçã', 2001),
+(10013, 'Fruta', 'Mamão', 2001),
+(10014, 'Prato Principal', 'Frango grelhado', 2001),
+(10015, 'Prato Principal', 'Carne de panela', 2001),
+(10016, 'Prato Principal', 'Peixe assado', 2001),
+(10017, 'Prato Principal', 'Almôndegas ao molho', 2001),
+(10018, 'Prato Principal', 'Lasanha de legumes', 2001),
+(10019, 'Guarnição', 'Arroz branco', 2001),
+(10020, 'Guarnição', 'Arroz integral', 2001),
+(10021, 'Guarnição', 'Feijão carioca', 2001),
+(10022, 'Guarnição', 'Feijão preto', 2001),
+(10023, 'Guarnição', 'Purê de batata', 2001),
+(10024, 'Guarnição', 'Farofa de cenoura', 2001),
+(10025, 'Salada', 'Salada verde', 2001),
+(10026, 'Salada', 'Salada de tomate', 2001),
+(10027, 'Salada', 'Salada de beterraba', 2001),
+(10028, 'Salada', 'Salada de repolho', 2001),
+(10029, 'Sobremesa', 'Gelatina', 2001),
+(10030, 'Sobremesa', 'Melancia', 2001),
+(10031, 'Sobremesa', 'Doce de banana', 2001),
+(10032, 'Sobremesa', 'Mousse de maracujá', 2001)
+ON CONFLICT DO NOTHING;
