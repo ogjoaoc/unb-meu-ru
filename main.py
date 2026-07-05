@@ -104,15 +104,19 @@ if st.session_state['usuario'] is not None:
         st.caption(cargo.upper())
         st.markdown("---")
 
-        if cargo in ("nutricionista", "gerente"):
-            pg_cardapio = st.Page("pages_admin/cardapio.py",  title="Cardápio",       icon="📅")
-            nav = st.navigation([pg_cardapio])
+        if cargo == "nutricionista":
+            pg_cardapio = st.Page("paginas/admin/cardapio.py",  title="Cardápio",       icon="📅")
+            pg_eventos   = st.Page("paginas/admin/eventos.py",   title="Eventos",        icon="🎉")
+            nav = st.navigation([pg_cardapio, pg_eventos])
+        elif cargo == "gerente":
+            pg_gerente = st.Page("paginas/admin/gerente.py", title="Dashboard", icon="🛠️")
+            nav = st.navigation([pg_gerente])
         else:
             pg_home_e  = st.Page("paginas/estudante/home_estudante.py", title="Meu RU",  icon="🏠")
             pg_saldo   = st.Page("paginas/estudante/saldo.py",          title="Saldo",   icon="💳")
-            
-            # ALTERADO: Inclusão do pg_saldo na lista do st.navigation para permitir a troca de abas!
-            nav = st.navigation([pg_home_e, pg_saldo])
+            pg_eventos = st.Page("paginas/admin/eventos.py",             title="Eventos", icon="🎉")
+
+            nav = st.navigation([pg_home_e, pg_saldo, pg_eventos])
 
         st.markdown("---")
         if st.button("Sair", use_container_width=True):
