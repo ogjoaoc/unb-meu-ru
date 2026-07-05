@@ -1,4 +1,4 @@
-from database.db import run_query
+from database.conexao import run_query
 
 # def autenticar(usuario, senha):
 #     if usuario == "admin" and senha == "admin":
