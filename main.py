@@ -1,7 +1,8 @@
 # 100% vibecodado esse front
 import streamlit as st
 import sessoes as ses
-from database.db import cardapio_ativo, listar_eventos, add_student
+from database.cardapio_db import *
+from database.estudante_db import *
 from services.autenticacao import run_login
 from datetime import datetime
 
@@ -70,8 +71,8 @@ def modal_cadastro():
         elif len(senha) < 4:
             st.error("A senha deve conter pelo menos 4 caracteres.")
         else:
-            # Dispara a escrita atômica multi-tabela para estudante passando a matrícula
-            resultado = add_student(
+            # CORRIGIDO: Apontando para a função correta do seu estudante_db.py
+            resultado = adicionar_estudante(
                 matricula=matricula_inp,
                 nome=nome.strip(), 
                 email=email.strip(), 
@@ -105,13 +106,13 @@ if st.session_state['usuario'] is not None:
 
         if cargo in ("nutricionista", "gerente"):
             pg_cardapio = st.Page("pages_admin/cardapio.py",  title="Cardápio",       icon="📅")
-            # pg_eventos  = st.Page("pages_admin/eventos.py",   title="Eventos",        icon="🎨")
             nav = st.navigation([pg_cardapio])
         else:
             pg_home_e  = st.Page("paginas/estudante/home_estudante.py", title="Meu RU",  icon="🏠")
-            # pg_saldo   = st.Page("paginas/estudante/saldo.py",          title="Saldo",   icon="💳")
-            # pg_ev_est  = st.Page("paginas/estudante/eventos.py",        title="Eventos", icon="🎉")
-            nav = st.navigation([pg_home_e])
+            pg_saldo   = st.Page("paginas/estudante/saldo.py",          title="Saldo",   icon="💳")
+            
+            # ALTERADO: Inclusão do pg_saldo na lista do st.navigation para permitir a troca de abas!
+            nav = st.navigation([pg_home_e, pg_saldo])
 
         st.markdown("---")
         if st.button("Sair", use_container_width=True):
@@ -184,25 +185,26 @@ except Exception:
 if ativo:
     st.markdown("---")
     st.subheader("📋 Cardápio desta semana")
-    st.caption(f"{ativo['Data_inicio'][:10]}  →  {ativo['Data_fim'][:10]}")
+    st.caption(f"{ativo['data_inicio'] if 'data_inicio' in ativo else ativo['Data_inicio']}  →  {ativo['data_fim'] if 'data_fim' in ativo else ativo['Data_fim']}")
 
-    from database.db import itens_do_cardapio
     DIAS_PT = {"Segunda":"Seg","Terca":"Ter","Quarta":"Qua",
                "Quinta":"Qui","Sexta":"Sex","Sabado":"Sáb","Domingo":"Dom"}
 
-    itens = itens_do_cardapio(ativo["ID_Cardapio"])
-    almoco = [i for i in itens if i["Periodo"] == "Almoco"]
-    dias_c = list(dict.fromkeys(i["Dia_semana"] for i in almoco))
+    itens = itens_do_cardapio(ativo["id_cardapio"] if "id_cardapio" in ativo else ativo["ID_Cardapio"])
+    almoco = [i for i in itens if (i["periodo"] if "periodo" in i else i["Periodo"]) == "Almoco"]
+    dias_c = list(dict.fromkeys(i["dia_semana"] if "dia_semana" in i else i["Dia_semana"] for i in almoco))
 
     if dias_c:
         cols = st.columns(len(dias_c))
         for idx, dia in enumerate(dias_c):
-            dia_itens = [i for i in almoco if i["Dia_semana"] == dia]
+            dia_itens = [i for i in almoco if (i["dia_semana"] if "dia_semana" in i else i["Dia_semana"]) == dia]
             with cols[idx]:
                 st.markdown(f"**{DIAS_PT.get(dia, dia)}**")
                 por_cat: dict = {}
                 for it in dia_itens:
-                    por_cat.setdefault(it["Categoria"], []).append(it["Nome"])
+                    cat_key = it["categoria"] if "categoria" in it else it["Categoria"]
+                    nome_key = it["nome"] if "nome" in it else it["Nome"]
+                    por_cat.setdefault(cat_key, []).append(nome_key)
                 for cat, nomes in por_cat.items():
                     st.markdown(f"<small style='color:#0a7a14'>{cat}</small>", unsafe_allow_html=True)
                     for n in nomes:
