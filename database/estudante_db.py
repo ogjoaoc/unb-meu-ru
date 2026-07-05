@@ -52,3 +52,69 @@ def recarregar_saldo(matricula, valor):
         return False
     finally:
         if CON: CON.close()
+
+
+def listar_estudantes_admin(limite=200):
+    query = (
+        "SELECT e.matricula, u.nome, u.email, e.curso, e.saldo_ru "
+        "FROM Estudante e "
+        "JOIN Usuario u ON u.id_usuario = e.id_usuario "
+        "ORDER BY u.nome ASC "
+        "LIMIT %s;"
+    )
+    return run_query(query, (limite,), fetch=True) or []
+
+
+def definir_saldo_estudante(matricula, novo_saldo):
+    CON = get_connection()
+    if not CON:
+        return False
+    try:
+        with CON.cursor() as cursor:
+            cursor.execute(
+                "UPDATE Estudante SET Saldo_RU = %s WHERE Matricula = %s;",
+                (novo_saldo, matricula),
+            )
+            if cursor.rowcount == 0:
+                CON.rollback()
+                return False
+            CON.commit()
+            return True
+    except Exception as e:
+        if CON:
+            CON.rollback()
+        st.error(f"Erro ao atualizar saldo do estudante: {e}")
+        return False
+    finally:
+        if CON:
+            CON.close()
+
+
+def remover_estudante_sistema(matricula):
+    CON = get_connection()
+    if not CON:
+        return False
+    try:
+        with CON.cursor() as cursor:
+            cursor.execute("SELECT ID_Usuario FROM Estudante WHERE Matricula = %s;", (matricula,))
+            row = cursor.fetchone()
+            if not row:
+                CON.rollback()
+                return False
+
+            id_usuario = row[0]
+            cursor.execute("DELETE FROM Usuario WHERE ID_Usuario = %s;", (id_usuario,))
+            if cursor.rowcount == 0:
+                CON.rollback()
+                return False
+
+            CON.commit()
+            return True
+    except Exception as e:
+        if CON:
+            CON.rollback()
+        st.error(f"Erro ao remover estudante: {e}")
+        return False
+    finally:
+        if CON:
+            CON.close()
