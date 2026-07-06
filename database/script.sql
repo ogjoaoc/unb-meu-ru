@@ -211,3 +211,43 @@ INSERT INTO ItemCardapio (ID_ItemCardapio, Categoria, Nome, ID_Nutricionista) VA
 (10031, 'Sobremesa', 'Doce de banana', 2001),
 (10032, 'Sobremesa', 'Mousse de maracujá', 2001)
 ON CONFLICT DO NOTHING;
+
+-- view e procedure
+CREATE OR REPLACE VIEW vw_desempenho_cardapio AS
+SELECT 
+    c.id_cardapio,
+    c.data_inicio,
+    c.data_fim,
+    c.status,
+    u.nome AS nutricionista_responsavel,
+    COUNT(f.id_feedback) AS total_avaliacoes,
+    ROUND(COALESCE(AVG(f.nota), 0), 2) AS nota_media
+FROM Cardapio c
+LEFT JOIN Feedback f ON c.id_cardapio = f.id_cardapio
+LEFT JOIN Funcionario func ON c.id_funcionario = func.id_funcionario
+LEFT JOIN Usuario u ON func.id_usuario = u.id_usuario
+GROUP BY c.id_cardapio, c.data_inicio, c.data_fim, c.status, u.nome;
+
+CREATE OR REPLACE PROCEDURE pr_realizar_recarga(
+    p_matricula INT,
+    p_valor DECIMAL(10,2)
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_id_transacao INT;
+BEGIN
+    IF p_valor <= 0 THEN
+        RAISE EXCEPTION 'O valor da recarga deve ser maior que zero.';
+    END IF;
+
+    v_id_transacao := FLOOR(RANDOM() * (999999 - 100000 + 1) + 100000);
+
+    INSERT INTO Transacao (id_transacao, valor, data_hora, matricula)
+    VALUES (v_id_transacao, p_valor, CURRENT_TIMESTAMP, p_matricula);
+
+    UPDATE Estudante
+    SET saldo_ru = saldo_ru + p_valor
+    WHERE matricula = p_matricula;
+END;
+$$;

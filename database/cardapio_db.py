@@ -103,3 +103,8 @@ def adicionar_item_catalogo(id_itemcardapio, categoria, nome, id_nutricionista):
 def feedbacks_do_cardapio(id_cardapio):
     query = "SELECT id_feedback, nota, descricao, matricula FROM Feedback WHERE id_cardapio = %s ORDER BY data_feedback DESC;"
     return run_query(query, (id_cardapio,), fetch=True) or []
+
+# usando a view
+def relatorio_desempenho_cardapios():
+    query = "SELECT * FROM vw_desempenho_cardapio ORDER BY data_inicio DESC;"
+    return run_query(query, fetch=True) or []

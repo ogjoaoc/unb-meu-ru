@@ -34,25 +34,11 @@ def historico_transacoes(matricula, limite=30):
     )
     return run_query(query, (matricula, limite), fetch=True) or []
 
-def recarregar_saldo(matricula, valor):
-    CON = get_connection()
-    if not CON: return False
-    try:
-        with CON.cursor() as cursor:
-            cursor.execute("UPDATE Estudante SET Saldo_RU = Saldo_RU + %s WHERE Matricula = %s;", (valor, matricula))
-            id_transacao = random.randint(100000, 999999)
-            agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            q_trans = "INSERT INTO Transacao (ID_Transacao, Valor, Data_Hora, Matricula) VALUES (%s, %s, %s, %s);"
-            cursor.execute(q_trans, (id_transacao, valor, agora, matricula))
-            CON.commit()
-            return True
-    except Exception as e:
-        if CON: CON.rollback()
-        st.error(f"Erro na transação de recarga: {e}")
-        return False
-    finally:
-        if CON: CON.close()
 
+# aqui usando a procedure
+def recarregar_saldo(matricula, valor):
+    query = "CALL pr_realizar_recarga(%s, %s);"
+    return run_query(query, (int(matricula), float(valor)), fetch=False) is not None
 
 def listar_estudantes_admin(limite=200):
     query = (
