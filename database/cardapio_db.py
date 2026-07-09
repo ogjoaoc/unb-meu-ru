@@ -1,5 +1,6 @@
 import random
 from datetime import datetime
+
 from database.conexao import run_query
 
 def cardapio_ativo():
@@ -33,10 +34,6 @@ def registrar_feedback(comentario, nota, id_cardapio, matricula):
     query = "INSERT INTO Feedback (id_feedback, descricao, nota, id_cardapio, matricula) VALUES (%s, %s, %s, %s, %s);"
     id_fb = random.randint(100000, 999999)
     return run_query(query, (id_fb, comentario, nota, id_cardapio, matricula), fetch=False) is not None
-
-def listar_eventos():
-    query = "SELECT id_evento, data_inicio, data_fim, descricao FROM Evento ORDER BY data_inicio ASC;"
-    return run_query(query, fetch=True) or []
 
 def listar_itens_cardapio():
     query = "SELECT id_itemcardapio, categoria, nome, id_nutricionista FROM ItemCardapio ORDER BY nome;"
