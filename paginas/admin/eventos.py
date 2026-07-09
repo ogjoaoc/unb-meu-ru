@@ -34,7 +34,10 @@ if andamento:
 	for ev, dt_i, dt_f in andamento:
 		with st.container(border=True):
 			c1, c2 = st.columns([5, 1])
-			c1.markdown(f"**{str(ev['descricao'])[:80]}**")
+			with c1:
+				if ev.get("foto_capa"):
+					st.image(bytes(ev["foto_capa"]), width=200)
+				st.markdown(f"**{str(ev['descricao'])[:80]}**")
 			c2.metric("Inscritos", contagem_inscritos(ev["id_evento"]))
 			st.caption(f"{dt_i.strftime('%d/%m/%Y %H:%M')} → {dt_f.strftime('%d/%m/%Y %H:%M')}")
 else:
@@ -46,9 +49,11 @@ if proximos:
 	for ev, dt_i, dt_f in proximos:
 		with st.container(border=True):
 			c1, c2 = st.columns([5, 1])
-			c1.markdown(f"**{str(ev['descricao'])[:80]}**")
+			with c1:
+				if ev.get("foto_capa"):
+					st.image(bytes(ev["foto_capa"]), width=200)
+				st.markdown(f"**{str(ev['descricao'])[:80]}**")
 			c2.metric("Inscritos", contagem_inscritos(ev["id_evento"]))
 			st.caption(f"{dt_i.strftime('%d/%m/%Y %H:%M')} → {dt_f.strftime('%d/%m/%Y %H:%M')}")
 else:
 	st.caption("Sem eventos futuros.")
-

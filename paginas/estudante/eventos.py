@@ -1,6 +1,5 @@
 import streamlit as st
 from datetime import datetime
-
 from components.styles import inject
 from database.evento_db import (
     cancelar_inscricao,
@@ -15,12 +14,14 @@ inject()
 user_sessao = st.session_state.get("usuario", {})
 matricula = user_sessao.get("matricula")
 if not matricula:
+	st.warning("Efetue o login como estudante para acessar o mural.")
 	st.stop()
 
-minhas_inscs = inscricoes_do_estudante(matricula)
+# Busca as inscrições atuais do estudante logado
+minhas_inscs = [ins["id_evento"] if isinstance(ins, dict) else ins for ins in inscricoes_do_estudante(matricula)]
 
 st.title("🎉 Mural de Eventos")
-st.caption("Eventos culturais e extracurriculares organizados pelo RU da UnB.")
+st.caption("Participe dos eventos extracurriculares organizados pelo RU da UnB.")
 
 eventos = listar_eventos()
 if not eventos:
@@ -29,6 +30,7 @@ if not eventos:
 
 agora = datetime.now()
 proximos, andamento, passados = [], [], []
+
 for ev in eventos:
 	try:
 		dt_i = datetime.strptime(str(ev["data_inicio"])[:16], "%Y-%m-%d %H:%M")
@@ -42,60 +44,51 @@ for ev in eventos:
 	except Exception:
 		pass
 
-
 def render_ev(ev, dt_i, dt_f, badge_label, badge_color, encerrado=False):
-	inscrito = ev["id_evento"] in minhas_inscs
-	inscritos = contagem_inscritos(ev["id_evento"])
+	id_ev = int(ev["id_evento"])
+	inscrito = id_ev in minhas_inscs
+	inscritos = contagem_inscritos(id_ev)
 	descricao = str(ev["descricao"])
+	
 	with st.container(border=True):
+		if ev.get("foto_capa"):
+			st.image(bytes(ev["foto_capa"]), use_container_width=True)
+			
 		h1, h2 = st.columns([5, 1])
 		h1.markdown(f"**{descricao[:80]}{'...' if len(descricao) > 80 else ''}**")
 		h2.metric("Inscritos", inscritos)
+		
 		c1, c2, c3 = st.columns(3)
 		c1.caption(f"📅 {dt_i.strftime('%d/%m/%Y %H:%M')}")
 		c2.caption(f"🏁 {dt_f.strftime('%d/%m/%Y %H:%M')}")
 		c3.markdown(f":{badge_color}[{badge_label}]")
+		
 		if not encerrado:
 			if inscrito:
-				st.success("✅ Você está inscrito!")
-				if st.button("Cancelar inscrição", key=f"canc_{ev['id_evento']}"):
-					cancelar_inscricao(ev["id_evento"], matricula)
-					st.rerun()
+				st.success("✅ Você está inscrito neste evento!")
+				if st.button("Cancelar minha inscrição", key=f"canc_{id_ev}", type="secondary"):
+					if cancelar_inscricao(id_ev, int(matricula)):
+						st.success("Inscrição cancelada.")
+						st.rerun()
 			else:
-				if st.button("🎟️ Inscrever-se", key=f"insc_{ev['id_evento']}", type="primary"):
-					ok = inscrever_estudante(ev["id_evento"], matricula)
-					if ok:
-						st.success("Inscrito! 🎉")
+				if st.button("🎟️ Realizar Inscrição", key=f"insc_{id_ev}", type="primary"):
+					if inscrever_estudante(id_ev, int(matricula)):
+						st.success("Sua vaga foi garantida! 🎉")
 						st.rerun()
 					else:
-						st.warning("Já inscrito ou indisponível no momento.")
+						st.error("Falha ao processar inscrição.")
 		else:
 			if inscrito:
 				st.info("📜 Você participou deste evento.")
 
-
 if andamento:
 	st.subheader("🔵 Acontecendo agora")
-	for ev, i, f in andamento:
-		render_ev(ev, i, f, "🔵 Em andamento", "blue")
-	st.markdown("---")
+	for ev, i, f in andamento: render_ev(ev, i, f, "🔵 Em andamento", "blue")
 
 if proximos:
 	st.subheader("🟢 Próximos eventos")
-	for ev, i, f in proximos:
-		render_ev(ev, i, f, "🟢 Próximo", "green")
-	st.markdown("---")
+	for ev, i, f in proximos: render_ev(ev, i, f, "🟢 Próximo", "green")
 
 if passados:
 	with st.expander(f"⚫ Eventos encerrados ({len(passados)})"):
-		for ev, i, f in passados:
-			render_ev(ev, i, f, "⚫ Encerrado", "grey", encerrado=True)
-
-if minhas_inscs:
-	st.markdown("---")
-	st.subheader(f"🎟️ Minhas inscrições ({len(minhas_inscs)})")
-	todos = {ev["id_evento"]: ev for ev in eventos}
-	for eid in minhas_inscs:
-		ev = todos.get(eid)
-		if ev:
-			st.markdown(f"• **#{eid}** – {str(ev['descricao'])[:70]}")
+		for ev, i, f in passados: render_ev(ev, i, f, "⚫ Encerrado", "grey", encerrado=True)
