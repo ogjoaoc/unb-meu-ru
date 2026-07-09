@@ -3,6 +3,7 @@ import streamlit as st
 import sessoes as ses
 from database.cardapio_db import *
 from database.estudante_db import *
+from database.evento_db import *
 from services.autenticacao import run_login
 from datetime import datetime
 
@@ -110,11 +111,12 @@ if st.session_state['usuario'] is not None:
             nav = st.navigation([pg_cardapio, pg_eventos])
         elif cargo == "gerente":
             pg_gerente = st.Page("paginas/admin/gerente.py", title="Dashboard", icon="🛠️")
-            nav = st.navigation([pg_gerente])
+            pg_eventos = st.Page("paginas/admin/eventos_gerente.py", title="Eventos", icon="🎉")
+            nav = st.navigation([pg_gerente, pg_eventos])
         else:
             pg_home_e  = st.Page("paginas/estudante/home_estudante.py", title="Meu RU",  icon="🏠")
             pg_saldo   = st.Page("paginas/estudante/saldo.py",          title="Saldo",   icon="💳")
-            pg_eventos = st.Page("paginas/admin/eventos.py",             title="Eventos", icon="🎉")
+            pg_eventos = st.Page("paginas/estudante/eventos.py",         title="Eventos", icon="🎉")
 
             nav = st.navigation([pg_home_e, pg_saldo, pg_eventos])
 
@@ -224,7 +226,7 @@ proximos = []
 agora = datetime.now()
 for ev in eventos:
     try:
-        dt = datetime.strptime(ev["Data_inicio"][:16], "%Y-%m-%d %H:%M")
+        dt = datetime.strptime(str(ev["data_inicio"])[:16], "%Y-%m-%d %H:%M")
         if dt > agora:
             proximos.append((ev, dt))
     except Exception:
@@ -236,7 +238,8 @@ if proximos:
     for ev, dt in proximos[:3]:
         with st.container(border=True):
             c1, c2 = st.columns([5,1])
-            c1.markdown(f"**{ev['Descricao'][:80]}{'...' if len(ev['Descricao'])>80 else ''}**")
+            descricao = str(ev["descricao"])
+            c1.markdown(f"**{descricao[:80]}{'...' if len(descricao)>80 else ''}**")
             c2.markdown(f"<span class='notif-badge'>📅 {dt.strftime('%d/%m')}</span>",
                         unsafe_allow_html=True)
 
