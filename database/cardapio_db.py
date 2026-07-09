@@ -24,16 +24,20 @@ def itens_do_cardapio(id_cardapio):
     return run_query(query, (id_cardapio,), fetch=True) or []
 
 def media_notas_cardapio(id_cardapio):
-    query = "SELECT AVG(nota) as media, COUNT(*) as total FROM Feedback WHERE id_cardapio = %s;"
-    res = run_query(query, (id_cardapio,), fetch=True)
-    if res and res[0]['total'] > 0:
-        return round(float(res[0]['media']), 1), res[0]['total']
+    query = """
+        SELECT nota_media as media, 
+               (SELECT COUNT(*) FROM Feedback WHERE id_cardapio = %s) as total 
+        FROM Cardapio 
+        WHERE id_cardapio = %s;
+    """
+    res = run_query(query, (id_cardapio, id_cardapio), fetch=True)
+    if res:
+        return round(float(res[0]['media'] or 0.0), 1), res[0]['total']
     return 0.0, 0
 
 def registrar_feedback(comentario, nota, id_cardapio, matricula):
-    query = "INSERT INTO Feedback (id_feedback, descricao, nota, id_cardapio, matricula) VALUES (%s, %s, %s, %s, %s);"
-    id_fb = random.randint(100000, 999999)
-    return run_query(query, (id_fb, comentario, nota, id_cardapio, matricula), fetch=False) is not None
+    query = "INSERT INTO Feedback (descricao, nota, id_cardapio, matricula) VALUES (%s, %s, %s, %s);"
+    return run_query(query, (comentario, nota, id_cardapio, matricula), fetch=False) is not None
 
 def listar_itens_cardapio():
     query = "SELECT id_itemcardapio, categoria, nome, id_nutricionista FROM ItemCardapio ORDER BY nome;"
@@ -96,6 +100,10 @@ def adicionar_item_catalogo(id_itemcardapio, categoria, nome, id_nutricionista):
         VALUES (%s, %s, %s, %s);
     """
     return run_query(query, (id_itemcardapio, categoria, nome, id_nutricionista), fetch=False) is not None
+
+def excluir_item_catalogo(id_itemcardapio):
+    query = "DELETE FROM ItemCardapio WHERE id_itemcardapio = %s;"
+    return run_query(query, (id_itemcardapio,), fetch=False) is not None
 
 def feedbacks_do_cardapio(id_cardapio):
     query = "SELECT id_feedback, nota, descricao, matricula FROM Feedback WHERE id_cardapio = %s ORDER BY data_feedback DESC;"

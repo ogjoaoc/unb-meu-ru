@@ -10,7 +10,7 @@ def obter_evento(id_evento):
     res = run_query(query, (id_evento,), fetch=True) or []
     return res[0] if res else None
 
-def criar_evento(id_evento, data_inicio, data_fim, descricao, foto_bytes=None):
+def criar_evento(data_inicio, data_fim, descricao, foto_bytes=None): # <<< REMOVIDO id_evento daqui
     con = get_connection()
     if not con:
         return False
@@ -18,8 +18,8 @@ def criar_evento(id_evento, data_inicio, data_fim, descricao, foto_bytes=None):
         with con.cursor() as cursor:
             foto_valor = psycopg2.Binary(foto_bytes) if foto_bytes else None
             cursor.execute(
-                "INSERT INTO Evento (id_evento, data_inicio, data_fim, descricao, foto_capa) VALUES (%s, %s, %s, %s, %s);",
-                (id_evento, data_inicio, data_fim, descricao, foto_valor),
+                "INSERT INTO Evento (data_inicio, data_fim, descricao, foto_capa) VALUES (%s, %s, %s, %s);",
+                (data_inicio, data_fim, descricao, foto_valor),
             )
             con.commit()
             return True

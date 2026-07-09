@@ -8,11 +8,17 @@ def adicionar_estudante(matricula, nome, email, senha, data_nascimento, curso):
     if not CON: return None
     try:
         with CON.cursor() as cursor:
-            id_usuario = random.randint(10000, 99999)
-            query = "INSERT INTO Usuario (ID_Usuario, Nome, Senha, Data_Nascimento, Email) VALUES (%s, %s, %s, %s, %s);"
-            cursor.execute(query, (id_usuario, nome, senha, data_nascimento, email.strip()))
-            query = "INSERT INTO Estudante (Matricula, Saldo_RU, Curso, ID_Usuario) VALUES (%s, 0.00, %s, %s);"
-            cursor.execute(query, (int(matricula), curso, id_usuario))
+            query_user = """
+                INSERT INTO Usuario (Nome, Senha, Data_Nascimento, Email) 
+                VALUES (%s, %s, %s, %s) RETURNING ID_Usuario;
+            """
+            cursor.execute(query_user, (nome, senha, data_nascimento, email.strip()))
+            
+            id_usuario_gerado = cursor.fetchone()[0]
+            
+            query_est = "INSERT INTO Estudante (Matricula, Saldo_RU, Curso, ID_Usuario) VALUES (%s, 0.00, %s, %s);"
+            cursor.execute(query_est, (int(matricula), curso, id_usuario_gerado))
+            
             CON.commit()
             return {"matricula": matricula, "email": email}
     except Exception as e:
@@ -34,8 +40,6 @@ def historico_transacoes(matricula, limite=30):
     )
     return run_query(query, (matricula, limite), fetch=True) or []
 
-
-# aqui usando a procedure
 def recarregar_saldo(matricula, valor):
     query = "CALL pr_realizar_recarga(%s, %s);"
     return run_query(query, (int(matricula), float(valor)), fetch=False) is not None
@@ -49,7 +53,6 @@ def listar_estudantes_admin(limite=200):
         "LIMIT %s;"
     )
     return run_query(query, (limite,), fetch=True) or []
-
 
 def definir_saldo_estudante(matricula, novo_saldo):
     CON = get_connection()
@@ -74,7 +77,6 @@ def definir_saldo_estudante(matricula, novo_saldo):
     finally:
         if CON:
             CON.close()
-
 
 def remover_estudante_sistema(matricula):
     CON = get_connection()

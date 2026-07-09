@@ -1,5 +1,5 @@
 CREATE TABLE Usuario (
-    ID_Usuario INT PRIMARY KEY,
+    ID_Usuario SERIAL PRIMARY KEY,
     Nome VARCHAR(150) NOT NULL,
     Senha VARCHAR(255) NOT NULL, 
     Data_Nascimento DATE NOT NULL,
@@ -7,7 +7,7 @@ CREATE TABLE Usuario (
 );
 
 CREATE TABLE Evento (
-    ID_Evento INT PRIMARY KEY,
+    ID_Evento SERIAL PRIMARY KEY,
     Data_inicio TIMESTAMP NOT NULL,
     Data_fim TIMESTAMP NOT NULL,
     Descricao TEXT NOT NULL,
@@ -59,6 +59,7 @@ CREATE TABLE Cardapio (
     Data_Fim DATE NOT NULL,
     Status VARCHAR(20) DEFAULT 'Incompleto',
     ID_Funcionario INT,
+    Nota_Media DECIMAL(3, 2) DEFAULT 0.00, 
     
     CONSTRAINT chk_status_cardapio CHECK (Status IN ('Incompleto', 'Completo', 'Publicado')),
     CONSTRAINT periodo_cardapio CHECK (Data_Fim >= Data_Inicio),
@@ -87,7 +88,7 @@ CREATE TABLE Cardapio_Contem_Item (
 );
 
 CREATE TABLE Transacao (
-    ID_Transacao INT PRIMARY KEY,
+    ID_Transacao SERIAL PRIMARY KEY,
     Valor DECIMAL(10,2) NOT NULL,
     Data_Hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Matricula INT NOT NULL,
@@ -113,7 +114,7 @@ CREATE TABLE Certificado (
 );
 
 CREATE TABLE Feedback (
-    ID_Feedback INT PRIMARY KEY,
+    ID_Feedback SERIAL PRIMARY KEY,
     Nota INT NOT NULL,
     Descricao TEXT,
     Data_Feedback TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -124,3 +125,8 @@ CREATE TABLE Feedback (
     CONSTRAINT fk_feedback_cardapio FOREIGN KEY (ID_Cardapio) REFERENCES Cardapio(ID_Cardapio) ON DELETE CASCADE,
     CONSTRAINT unq_feedback UNIQUE (Matricula, ID_Cardapio)
 );
+
+SELECT setval('usuario_id_usuario_seq', (SELECT MAX(id_usuario) FROM Usuario));
+SELECT setval('evento_id_evento_seq', (SELECT MAX(id_evento) FROM Evento));
+SELECT setval('transacao_id_transacao_seq', (SELECT MAX(id_transacao) FROM Transacao));
+SELECT setval('feedback_id_feedback_seq', (SELECT MAX(id_feedback) FROM Feedback));

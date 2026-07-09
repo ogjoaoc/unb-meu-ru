@@ -7,8 +7,8 @@ from database.cardapio_db import (
     listar_itens_cardapio, listar_categorias,
     cardapio_ativo, listar_cardapios, itens_do_cardapio,
     cardapio_no_periodo, criar_cardapio, adicionar_item_ao_cardapio, remover_item_do_cardapio,
-    publicar_cardapio, adicionar_item_catalogo,
-    feedbacks_do_cardapio, media_notas_cardapio,
+    publicar_cardapio, adicionar_item_catalogo, excluir_item_catalogo,
+    feedbacks_do_cardapio, media_notas_cardapio, relatorio_desempenho_cardapios
 )
 
 inject()
@@ -51,7 +51,6 @@ def modal_celula(cid: int, dia: str, periodo: str, cat: str):
         unsafe_allow_html=True,
     )
     todos        = listar_itens_cardapio()
-    # ADAPTAÇÃO: lendo chaves minúsculas do Postgres
     opcoes_cat   = [i for i in todos if i["categoria"] == cat]
     itens_celula = [
         i for i in itens_do_cardapio(cid)
@@ -68,7 +67,6 @@ def modal_celula(cid: int, dia: str, periodo: str, cat: str):
             disp = [i["nome"] for i in opcoes_cat if i["nome"] not in ja]
             if disp:
                 escolha = st.selectbox(f"Escolher {cat}:", disp)
-                # Na sua tabela Cardapio_Contem_Item, a composição atua como o rótulo/obs
                 composicao = st.text_input("Composição (Ex: Prato principal, Opção vegana)", value=cat)
                 if st.button("➕ Adicionar", type="primary", use_container_width=True):
                     obj = next(i for i in opcoes_cat if i["nome"] == escolha)
@@ -85,8 +83,10 @@ def modal_celula(cid: int, dia: str, periodo: str, cat: str):
             for it in itens_celula:
                 c1, c2 = st.columns([5,1])
                 c1.markdown(f"• **{it['nome']}** <small>({it['composicao']})</small>", unsafe_allow_html=True)
-                # No banco, a remoção precisa identificar o item e o cardápio
-                if c2.button("🗑️", key=f"rm_{it['id_itemcardapio']}_{dia}_{periodo}_{random.randint(0,999)}"):
+                
+                # 🛠️ CORREÇÃO DA CHAVE: Removido o random.randint para estabilizar o clique do botão
+                chave_estatica = f"rm_{cid}_{it['id_itemcardapio']}_{dia}_{periodo}_{it['composicao'].replace(' ', '_')}"
+                if c2.button("🗑️", key=chave_estatica):
                     remover_item_do_cardapio(cid, it["id_itemcardapio"], periodo, dia, it["composicao"])
                     st.rerun()
 
@@ -105,7 +105,7 @@ def modal_novo_cardapio():
         if cardapio_no_periodo(str(dt_ini), str(dt_fim)):
             st.warning("Já existe um cardápio nesse período. Edite o existente em vez de criar outro.")
             return
-        cid = random.randint(1000, 9999) # Gera ID randômico para a PK do banco
+        cid = random.randint(1000, 9999)
         if criar_cardapio(cid, str(dt_ini), str(dt_fim), id_nutricionista_logado):
             st.success(f"Cardápio #{cid} criado!")
             st.rerun()
@@ -143,7 +143,6 @@ tabs = st.tabs(["🗓️ Matriz de Edição","📋 Visualizar Publicado","📦 C
 # ════════ TAB 1 — MATRIZ ═════════════════════════════════════════════════════
 with tabs[0]:
     cardapios  = listar_cardapios(8)
-    # ADAPTAÇÃO: lendo as chaves em minúsculas do Postgres
     opcoes_map = {
         f"#{c['id_cardapio']} · {str(c['data_inicio'])} → {str(c['data_fim'])}  "
         f"{'✅' if c['status'] == 'Publicado' else '📝'}": c["id_cardapio"]
@@ -178,7 +177,6 @@ with tabs[0]:
 
         st.caption("💡 Clique em uma célula para adicionar ou remover itens.")
 
-    # ── Monta a grade ─────────────────────────────────────────────────────────
     grade: dict = {}
     for item in itens_atuais:
         key = (item["periodo"], item["dia_semana"], item["categoria"])
@@ -214,7 +212,7 @@ with tabs[0]:
                 filled  = "mru-cell-filled" if items_c else ""
                 content = ("".join(badge(n) for n in items_c)
                            if items_c
-                           else '<sInclusãopan style="color:#ccc;font-size:.7rem">—</span>')
+                           else '<span style="color:#ccc;font-size:.7rem">—</span>')
                 row += f'<td class="mru-cell {filled}">{content}</td>'
             row += "</tr>"
             body.append(row)
@@ -228,7 +226,6 @@ with tabs[0]:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── Botões interativos da Grade (substituindo a tabela HTML estática para ficar responsivo) ──────────────────
     for periodo in PERIODOS:
         cats = cats_por_periodo[periodo]
         st.markdown(
@@ -297,6 +294,7 @@ with tabs[1]:
                             st.markdown(f"**{cat}**")
                             for n in nomes: st.markdown(f"• {n}")
 
+# ════════ TAB 2 — CATÁLOGO GERAL ═════════════════════════════════════════════
 with tabs[2]:
     col_title, col_btn = st.columns([4,1])
     col_title.subheader("Catálogo de Itens do Sistema")
@@ -308,7 +306,17 @@ with tabs[2]:
         itens_c = [i for i in listar_itens_cardapio() if i["categoria"] == cat]
         with st.expander(f"**{cat}** ({len(itens_c)} itens)"):
             for i in itens_c:
-                st.markdown(f"• {i['nome']}")
+                # ➕ ADICIONADO: Divisão em colunas para comportar o botão de deletar o item do catálogo
+                c1, c2 = st.columns([6, 1])
+                c1.markdown(f"• {i['nome']}")
+                
+                # Botão de lixeira acionando o CASCADE do banco de dados
+                if c2.button("🗑️", key=f"del_catalogo_{i['id_itemcardapio']}", help=f"Remover '{i['nome']}' permanentemente"):
+                    if excluir_item_catalogo(i['id_itemcardapio']):
+                        st.success(f"'{i['nome']}' removido do catálogo e dos cardápios com sucesso!")
+                        st.rerun()
+                    else:
+                        st.error("Não foi possível excluir o item do catálogo.")
 
 with tabs[3]:
     st.subheader("Feedbacks Coletados")
@@ -330,3 +338,22 @@ with tabs[3]:
                 st.markdown(f"**Estudante (Matrícula: {fb['matricula']})** – {stars}")
                 st.caption(fb["descricao"] or "*(sem comentário)*")
                 st.markdown("---")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.subheader("📊 Painel Histórico de Desempenho")
+        st.caption("Métricas gerenciais consolidadas diretamente da **VIEW nativa** (`vw_desempenho_cardapio`).")
+
+        dados_view = relatorio_desempenho_cardapios()
+        
+        if not dados_view:
+            st.info("Nenhum histórico de desempenho gerado pela View até o momento.")
+        else:
+            import pandas as pd
+            df_view = pd.DataFrame(dados_view)
+            
+            df_view.columns = [
+                "ID Cardápio", "Data Início", "Data Fim", "Status", 
+                "Nutricionista Responsável", "Total Avaliações", "Nota Média"
+            ]
+            
+            st.dataframe(df_view, use_container_width=True, hide_index=True)

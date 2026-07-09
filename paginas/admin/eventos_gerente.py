@@ -27,36 +27,40 @@ eventos_map = {
     for ev in eventos
 }
 
-# ADICIONADO: Aba "Inscrições" para o gerenciamento completo do Gerente
 tabs = st.tabs(["➕ Criar", "✏️ Editar", "🗑️ Excluir", "📋 Listar", "🎟️ Inscrições"])
 
 # --- ABAS EXISTENTES (CRIAR, EDITAR, EXCLUIR, LISTAR) ---
 with tabs[0]:
     st.subheader("Novo evento")
     with st.form("form_criar_evento", clear_on_submit=True):
-        col1, col2 = st.columns(2)
-        id_evento = col1.number_input("ID do evento", min_value=1, step=1, value=1000)
-        descricao = col2.text_area("Descrição", placeholder="Descreva o evento")
+        descricao = st.text_area("Descrição", placeholder="Descreva o evento")
+
         d1, d2 = st.columns(2)
         data_ini = d1.date_input("Data inicial", value=date.today())
         hora_ini = d2.time_input("Hora inicial", value=time(9, 0))
         d3, d4 = st.columns(2)
         data_fim = d3.date_input("Data final", value=date.today())
         hora_fim = d4.time_input("Hora final", value=time(11, 0))
-        foto_upload = st.file_uploader("🖼️ Foto de Capa (Opcional)", type=["png", "jpg", "jpeg"], key="upload_criar")
 
-        if st.form_submit_button("Criar evento", type="primary"):
-            if not descricao.strip(): st.error("Informe a descrição.")
+        foto_upload = st.file_uploader("🖼️ Imagem de Capa (Opcional)", type=["png", "jpg", "jpeg"])
+
+        submitted = st.form_submit_button("Criar evento", type="primary")
+        if submitted:
+            if not descricao.strip():
+                st.error("Informe a descrição do evento.")
             else:
                 dt_ini = datetime.combine(data_ini, hora_ini)
                 dt_fim = datetime.combine(data_fim, hora_fim)
                 bytes_foto = foto_upload.read() if foto_upload is not None else None
-                if dt_fim < dt_ini: st.error("A data final precisa ser maior que a inicial.")
-                elif obter_evento(int(id_evento)): st.error("Já existe um evento com esse ID.")
-                elif criar_evento(int(id_evento), dt_ini, dt_fim, descricao.strip(), bytes_foto):
+
+                if dt_fim < dt_ini:
+                    st.error("A data final precisa ser maior ou igual à inicial.")
+                # REMOVIDO: a verificação de obter_evento por ID, já que o banco vai gerar um novo exclusivo
+                elif criar_evento(dt_ini, dt_fim, descricao.strip(), bytes_foto): # <<< NÃO PASSA MAIS ID
                     st.success("Evento criado com sucesso.")
                     st.rerun()
-
+                else:
+                    st.error("Não foi possível criar o evento.")
 with tabs[1]:
     st.subheader("Editar evento")
     if not eventos: st.info("Nenhum evento cadastrado.")
@@ -90,7 +94,7 @@ with tabs[2]:
     else:
         escolhido = st.selectbox("Selecione o evento para excluir", list(eventos_map.keys()), key="evento_excluir")
         evento = eventos_map[escolhido]
-        st.warning(f"Você está deletando o evento #{evento['id_evento']}. Isso removerá as inscrições associadas via CASCADE.")
+        st.warning(f"Você está deletando o evento #{evento['id_evento']}.")
         confirmar = st.checkbox("Confirmo a exclusão definitiva.")
         if st.button("Excluir evento", type="primary"):
             if confirmar and excluir_evento(int(evento["id_evento"])):
@@ -130,11 +134,10 @@ with tabs[4]:
                     with col_info:
                         st.markdown(f"👤 **{aluno['nome']}** — Matrícula: `{aluno['matricula']}`")
                         st.caption(f"📧 {aluno['email']} | 🎓 Curso: {aluno['curso']}")
-                        # Tratamento simples para exibição da data de inscrição
                         data_insc = str(aluno['data_inscricao'])[:16]
                         st.caption(f"⏱️ Inscrito em: {data_insc}")
                     with col_btn:
-                        st.write("") # Espaçador visual
+                        st.write("") 
                         if st.button("❌ Remover", key=f"rem_{ev_id}_{aluno['matricula']}", type="secondary", use_container_width=True):
                             if cancelar_inscricao(ev_id, int(aluno['matricula'])):
                                 st.success(f"Inscrição de {aluno['nome']} removida!")
